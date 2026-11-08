@@ -22,7 +22,8 @@ function buildHealthyServices(): HealthServices {
 }
 
 function applyRandomFailure(services: HealthServices): void {
-  const failingService: ServiceName = SERVICE_NAMES[Math.floor(Math.random() * SERVICE_NAMES.length)];
+  const failingService: ServiceName =
+    SERVICE_NAMES[Math.floor(Math.random() * SERVICE_NAMES.length)];
   const failingStatus: ServiceStatus = Math.random() < 0.5 ? 'DOWN' : 'DEGRADED';
   const degraded: ServiceHealth = { status: failingStatus, latency_ms: randomLatency() };
   services[failingService] = degraded;
