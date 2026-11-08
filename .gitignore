@@ -5,3 +5,4 @@ dist/
 /frontend/vite.config.d.ts
 *.log
 .DS_Store
+.claude/
