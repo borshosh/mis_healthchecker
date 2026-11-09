@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue';
 import axios from 'axios';
 import { fetchHealth } from './api/health';
+import CheckupForm from './components/CheckupForm.vue';
 import type { HealthResponse, OverallStatus, ServiceStatus } from './types';
 
 interface ServiceRow {
@@ -45,13 +46,22 @@ const rows = ref<ServiceRow[]>([]);
 const loading = ref(false);
 const error = ref<HealthError | null>(null);
 
+const SERVICE_KEYS: Array<keyof HealthResponse['services']> = ['api', 'database', 'auth'];
+
 function buildRows(response: HealthResponse): ServiceRow[] {
-  return (Object.keys(response.services) as Array<keyof HealthResponse['services']>).map((key) => ({
+  return SERVICE_KEYS.map((key) => ({
     key,
     name: SERVICE_LABELS[key],
     status: response.services[key].status,
     latency_ms: response.services[key].latency_ms,
   }));
+}
+
+function badgeColorFor(status: unknown): string {
+  if (status === 'UP' || status === 'DEGRADED' || status === 'DOWN') {
+    return SERVICE_BADGE_COLOR[status];
+  }
+  return 'default';
 }
 
 function describeError(err: unknown): string {
@@ -105,11 +115,10 @@ onMounted(loadHealth);
   >
     <template #bodyCell="{ column, record }">
       <template v-if="column.key === 'status'">
-        <a-badge
-          :color="SERVICE_BADGE_COLOR[record.status as ServiceStatus]"
-          :text="record.status"
-        />
+        <a-badge :color="badgeColorFor(record.status)" :text="record.status" />
       </template>
     </template>
   </a-table>
+  <a-divider />
+  <CheckupForm />
 </template>
