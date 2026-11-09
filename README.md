@@ -59,6 +59,34 @@ cd frontend && npm run build
 - один из сервисов (`api`, `database` или `auth`) случайно получает статус `DOWN` или `DEGRADED`, либо
 - весь запрос завершается `HTTP 500`.
 
+## Анкета первичного осмотра
+
+`POST /api/v1/patients/checkup`
+
+Контракт (тип `CheckupPayload` выведен на бэкенде через `z.infer<typeof checkupSchema>` в [backend/src/schemas/checkup.ts](backend/src/schemas/checkup.ts) и переиспользуется на фронтенде через `import type`, без ручного дублирования):
+
+```json
+{
+  "patientId": "string (UUID)",
+  "temperature": "number",
+  "pulse": "number",
+  "complaints": "string",
+  "hasInsurance": "boolean"
+}
+```
+
+Защита на бэкенде:
+
+- тело запроса ограничено `express.json({ limit: '100kb' })` — превышение лимита отдаёт `413 Payload Too Large`;
+- перед валидацией сырой `req.body` изолируется в новый объект без прототипа, содержащий только пять ключей контракта; любой посторонний ключ (например, `__proto__`) отклоняется как `400 Bad Request`;
+- числовые поля проходят строгий препроцессинг — `false`, `null`, `[]` и подобные ложные значения не приводятся к `0`, а отклоняются как ошибка валидации;
+- карта ошибок `{"errors": {"fieldName": "message"}}` собирается безопасным проходом по `error.issues` с рантайм-проверкой типа ключа (`typeof key === 'string'`), без `as`;
+- если в `complaints` встречается `throw_error`, запрос завершается `500` с телом `{"error": "Сбой транзакции МИС"}` (имитация сбоя транзакции).
+
+На фронтенде форма (`a-input`, `a-input-number`, `a-textarea`, `a-switch`, `a-button`) при `400` подсвечивает конкретные поля через `validate-status="error"` и `help` у `a-form-item` (сам текст ошибки в `validate-status` не передаётся), а при `500` показывает глобальный `a-alert`.
+
+Во всём коде бэкенда и фронтенда не используются `any` и `as` (type assertion).
+
 ## Структура проекта
 
 ```
