@@ -36,6 +36,25 @@ cd backend && npm run build
 cd frontend && npm run build
 ```
 
+### Тесты
+
+```bash
+cd backend
+npm test
+```
+
+Юнит- и интеграционные тесты (Vitest + Supertest, `backend/src/**/*.test.ts`) покрывают: Zod-схему анкеты (валидный пейлоад, ложные числовые триггеры `false`/`null`/`[]`, невалидный UUID), изоляцию контракта (`__proto__`/посторонние ключи), сборку карты ошибок, имитацию сбоя `/api/v1/health`, а сам эндпоинт `/api/v1/patients/checkup` — через поднятое в памяти Express-приложение (без реального порта): `201`, `400` (включая 413 на превышении лимита) и `500` при `throw_error`.
+
+Для ручной проверки живого сервера есть `scripts/checkup-curl-tests.sh` — прогоняет те же сценарии через `curl` по сети, каждый сценарий можно запустить отдельно:
+
+```bash
+cd backend && npm run dev   # в одном терминале
+
+./scripts/checkup-curl-tests.sh                   # все сценарии подряд
+./scripts/checkup-curl-tests.sh valid              # только один сценарий
+./scripts/checkup-curl-tests.sh help               # список доступных сценариев
+```
+
 ## API
 
 `GET /api/v1/health`
