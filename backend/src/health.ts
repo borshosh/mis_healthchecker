@@ -1,7 +1,7 @@
 import type { HealthResponse, HealthServices, ServiceHealth, ServiceStatus } from './types';
 
-const SERVICE_NAMES = ['api', 'database', 'auth'] as const;
-type ServiceName = (typeof SERVICE_NAMES)[number];
+type ServiceName = 'api' | 'database' | 'auth';
+const SERVICE_NAMES: ServiceName[] = ['api', 'database', 'auth'];
 
 const FAILURE_INTERVAL = 3;
 

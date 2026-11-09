@@ -1,12 +1,15 @@
 import express from 'express';
 import cors from 'cors';
 import { getHealthSnapshot, ServiceOutageError } from './health';
+import { handleCheckup } from './checkup';
+import { isPayloadTooLargeError } from './httpErrors';
 import type { HealthResponse } from './types';
 
 const app = express();
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
 
 app.use(cors());
+app.use(express.json({ limit: '100kb' }));
 
 app.get('/', (_req, res) => {
   res.send('MIS Healthchecker backend is running');
@@ -23,6 +26,16 @@ app.get('/api/v1/health', (_req, res) => {
     }
     throw error;
   }
+});
+
+app.post('/api/v1/patients/checkup', handleCheckup);
+
+app.use((err: unknown, _req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (isPayloadTooLargeError(err)) {
+    res.status(413).json({ error: 'Payload Too Large' });
+    return;
+  }
+  next(err);
 });
 
 app.listen(PORT, () => {
