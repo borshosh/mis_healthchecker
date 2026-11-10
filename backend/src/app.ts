@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { getHealthSnapshot, ServiceOutageError } from './health';
 import { handleCheckup } from './checkup';
+import { handleGetIcd10, icd10RequestCounterMiddleware } from './icd10';
 import { isPayloadTooLargeError } from './httpErrors';
 import type { HealthResponse } from './types';
 
@@ -29,6 +30,8 @@ export function createApp(): express.Express {
   });
 
   app.post('/api/v1/patients/checkup', handleCheckup);
+
+  app.get('/api/v1/dictionaries/icd10', icd10RequestCounterMiddleware, handleGetIcd10);
 
   app.use((err: unknown, _req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (isPayloadTooLargeError(err)) {
