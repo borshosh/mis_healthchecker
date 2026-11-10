@@ -18,12 +18,31 @@ const columns = [
   { title: 'Диагноз', dataIndex: 'name', key: 'name' },
 ];
 
+// Tracks whichever request is currently "the one that matters". A new click
+// aborts it before starting its own, so at most one request is ever in
+// flight, and only its result is allowed to reach the UI.
+let activeController: AbortController | null = null;
+
 async function loadDictionary(): Promise<void> {
+  activeController?.abort();
+  const controller = new AbortController();
+  activeController = controller;
+
   loading.value = true;
   const startedAt = performance.now();
 
   try {
-    const response = await axios.get<Icd10Response>('/api/v1/dictionaries/icd10');
+    const response = await axios.get<Icd10Response>('/api/v1/dictionaries/icd10', {
+      signal: controller.signal,
+    });
+
+    // A later click may have swapped in its own controller while this
+    // request was still resolving (e.g. it won the race by a hair before
+    // the abort signal was observed). If so, this response is stale even
+    // though it technically completed - discard it.
+    if (activeController !== controller) {
+      return;
+    }
 
     elapsedMs.value = Math.round(performance.now() - startedAt);
     entries.value = response.data.data;
@@ -31,8 +50,16 @@ async function loadDictionary(): Promise<void> {
       response.data.source === 'cache'
         ? { type: 'success', message: 'SUCCESS: Данные получены из кэша сервера' }
         : { type: 'info', message: 'ATTENTION: Тяжелый запрос к БД' };
+  } catch (err) {
+    if (axios.isCancel(err)) {
+      return;
+    }
+    console.error('Failed to load ICD-10 dictionary', err);
   } finally {
-    loading.value = false;
+    if (activeController === controller) {
+      loading.value = false;
+      activeController = null;
+    }
   }
 }
 
