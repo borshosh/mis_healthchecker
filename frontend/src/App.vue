@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue';
 import axios from 'axios';
 import { fetchHealth } from './api/health';
 import CheckupForm from './components/CheckupForm.vue';
+import Icd10Dictionary from './components/Icd10Dictionary.vue';
 import type { HealthResponse, OverallStatus, ServiceStatus } from './types';
 
 interface ServiceRow {
@@ -121,4 +122,6 @@ onMounted(loadHealth);
   </a-table>
   <a-divider />
   <CheckupForm />
+  <a-divider />
+  <Icd10Dictionary />
 </template>
